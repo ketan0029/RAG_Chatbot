@@ -9,7 +9,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from deep_translator import GoogleTranslator  
 
 
-genai.configure(api_key="AIzaSyCL02k05rgXKMuAwaVvUL9iPb5XgdFwTwc")  
+genai.configure(api_key="Your API KEY")  
 
 def load_diet_data(file_path="diet_data.txt"):
     with open(file_path, "r", encoding="utf-8") as file:
