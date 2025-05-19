@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diet Chatbot (Dieto)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(0deg, rgba(34,193,195,1) 0%, rgba(45,253,52,0.88) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            width: 640px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+            
+    
+        .chat-box {
+            height: 400px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 95%;
+            display: flex;
+            align-items: center;
+        }
+        .user {
+            background: #007bff;
+            color: white;
+            text-align: right;
+            align-self: flex-end;
+        }
+        .bot {
+            background: #e0e0e0;
+            color: black;
+            text-align: left;
+            align-self: flex-start;
+        }
+        .input-container {
+            display: flex;
+            margin-top: 10px;
+        }
+        input, select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+        button {
+            padding: 10px;
+            background: #05f01d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .mic-btn {
+            background: #05f01d;
+        }
+        .mic-btn:hover {
+            background: #0056b3;
+        }
+        .speak-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Diet Chatbot (Dieto)</h2>
+        <label for="language">Select Language:</label>
+        <select id="language">
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="bn">Bengali</option>
+            <option value="ta">Tamil</option>
+            <option value="te">Telugu</option>
+            <option value="mr">Marathi</option>
+            <option value="gu">Gujarati</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="ja">Japanese</option>
+            <option value="ar">Arabic</option>
+        </select>
+        <div class="chat-box" id="chatBox"></div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask your chatbot...">
+            <button onclick="startSpeechRecognition()" class="mic-btn">🎤</button>
+            <button onclick="sendMessage()" id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function startSpeechRecognition() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = document.getElementById("language").value;
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+        
+            recognition.onresult = function(event) {
+                document.getElementById("userInput").value = event.results[0][0].transcript;
+                sendMessage();
+            };
+        
+            recognition.onerror = function(event) {
+                console.error("Speech recognition error:", event.error);
+            };
+        
+            recognition.start();
+        }
+
+        async function sendMessage() {
+            let inputField = document.getElementById("userInput");
+            let chatBox = document.getElementById("chatBox");
+            let language = document.getElementById("language").value;
+            let message = inputField.value.trim();
+
+            if (message === "") return;
+
+            let userMessage = document.createElement("div");
+            userMessage.classList.add("message", "user");
+            userMessage.textContent = "You: " + message;
+            chatBox.appendChild(userMessage);
+            inputField.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            document.getElementById("sendBtn").disabled = true;
+
+            try {
+                let response = await fetch("http://localhost:5000/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message, language: language })
+                });
+
+                let data = await response.json();
+                let botMessage = document.createElement("div");
+                botMessage.classList.add("message", "bot");
+                botMessage.textContent = "Bot: " + data.response;
+                
+                let speakButton = document.createElement("button");
+                speakButton.classList.add("speak-btn");
+                speakButton.innerHTML = "🔊";
+                speakButton.onclick = function() {
+                    speakText(data.response, language);
+                };
+                
+                botMessage.appendChild(speakButton);
+                chatBox.appendChild(botMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                console.error("Error fetching response:", error);
+            }
+
+            document.getElementById("sendBtn").disabled = false;
+        }
+
+        function speakText(text, lang) {
+            let speech = new SpeechSynthesisUtterance(text);
+            speech.lang = lang;
+            window.speechSynthesis.speak(speech);
+        }
+    </script>
+</body>
+</html>

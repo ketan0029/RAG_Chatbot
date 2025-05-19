@@ -1,0 +1,10 @@
+openai
+langchain
+faiss-cpu
+numpy
+pandas
+flask
+tiktoken
+langchain_community
+sentence_transformers
+google-generativeai
